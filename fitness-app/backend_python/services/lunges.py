@@ -10,8 +10,7 @@ model = YOLO("yolov8s-pose.pt")
 # =====================================
 # CAMERA / VIDEO
 # =====================================
-
-#cap = cv2.VideoCapture("videos/How to squat correctly.webm")
+#cap = cv2.VideoCapture("videos/male-Bodyweight-forward-lunges-side.mp4")
 cap = cv2.VideoCapture(0)
 
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
@@ -24,29 +23,16 @@ prev_person = None
 counter = 0
 stage = "up"
 
-UP_ANGLE = 160
-DOWN_ANGLE = 120
+UP_ANGLE = 165
+DOWN_ANGLE = 105
 
 GREEN = (0, 255, 0)
 RED   = (0, 0, 255)
 WHITE = (255, 255, 255)
 DARK  = (30, 30, 30)
-bottom_reached = False
-# =====================================
-# BODY CONNECTIONS
-# =====================================
-connections = [
-    (5, 6),                   # shoulders
-    (5, 7), (7, 9),           # left arm
-    (6, 8), (8, 10),          # right arm
-    (5, 11), (6, 12),         # torso
-    (11, 12),                 # hips
-    (11, 13), (13, 15),       # left leg
-    (12, 14), (14, 16)        # right leg
-]
 
 # =====================================
-# ANGLE
+# HELPERS
 # =====================================
 def calculate_angle(a, b, c):
     a = np.array(a)
@@ -63,77 +49,87 @@ def calculate_angle(a, b, c):
 
     return angle
 
-# =====================================
-# TORSO LEAN ANGLE
-# =====================================
+
 def torso_angle(shoulder, hip):
     dx = shoulder[0] - hip[0]
     dy = hip[1] - shoulder[1]
-
     return np.degrees(np.arctan2(abs(dx), abs(dy)))
 
-# =====================================
-# DRAW LINE
-# =====================================
-def draw_part(img, pts, a, b, color, thickness=4):
+
+def draw_line(img, pts, a, b, color, thickness=4):
     x1, y1 = int(pts[a][0]), int(pts[a][1])
     x2, y2 = int(pts[b][0]), int(pts[b][1])
     cv2.line(img, (x1, y1), (x2, y2), color, thickness)
 
+
+# =====================================
+# FIND FRONT LEG
+# =====================================
+def get_front_leg(person):
+    left_ankle = person[15]
+    right_ankle = person[16]
+
+    # bigger x = front leg in side view
+    if left_ankle[0] > right_ankle[0]:
+        return "left"
+    else:
+        return "right"
+
+
 # =====================================
 # ANALYZE FORM
-# RETURNS COLORS FOR BODY PARTS
 # =====================================
-def analyze_squat(person, angle, stage):
+def analyze_lunge(person, front_leg, knee_angle, stage):
 
-    # Default everything green
     colors = {
         "torso": GREEN,
         "left_leg": GREEN,
         "right_leg": GREEN,
-        "left_arm": GREEN,
-        "right_arm": GREEN,
-        "head": GREEN
+        "arms": GREEN
     }
 
     warning = "Good Form"
 
-    shoulder = person[5]
-    hip = person[11]
-    knee = person[13]
-    ankle = person[15]
-
-    # =================================
-    # UP / RISING = ALWAYS GREEN
-    # =================================
     if stage in ["up", "rising"]:
-        return colors, "Nice Rep"
+        return colors, "Ready"
 
-    # =================================
-    # WRONG CHECKS ONLY WHEN DOWN
-    # =================================
+    # =============================
+    # FRONT LEG JOINTS
+    # =============================
+    if front_leg == "left":
+        shoulder = person[5]
+        hip = person[11]
+        knee = person[13]
+        ankle = person[15]
+    else:
+        shoulder = person[6]
+        hip = person[12]
+        knee = person[14]
+        ankle = person[16]
 
-    # 1. HALF SQUAT
-    if angle > 130:
+    # =============================
+    # BAD FORM CHECKS
+    # =============================
+
+    # not deep enough
+    if knee_angle > 125:
         warning = "Go Lower"
 
-    # 2. KNEES TOO FORWARD
-    elif knee[0] > ankle[0] + 40:
-        colors["left_leg"] = RED
-        colors["right_leg"] = RED
-        warning = "Knees Forward"
+    # knee too forward
+    elif knee[0] > ankle[0] + 35:
+        warning = "Front Knee Forward"
+        if front_leg == "left":
+            colors["left_leg"] = RED
+        else:
+            colors["right_leg"] = RED
 
-    # 3. CHEST DOWN
-    elif torso_angle(shoulder, hip) > 50:
-        colors["torso"] = RED
+    # chest leaning
+    elif torso_angle(shoulder, hip) > 45:
         warning = "Chest Up"
-
-    # 4. TOO DEEP
-    elif angle < 55:
-        warning = "Too Deep"
+        colors["torso"] = RED
 
     else:
-        warning = "Perfect Depth"
+        warning = "Perfect Lunge"
 
     return colors, warning
 
@@ -144,7 +140,6 @@ def analyze_squat(person, angle, stage):
 while True:
 
     ret, frame = cap.read()
-    #frame = cv2.resize(frame, (464, 825))
     if not ret:
         break
 
@@ -171,42 +166,47 @@ while True:
             prev_person = person.copy()
 
             try:
-                shoulder = person[5]
-                hip = person[11]
-                knee = person[13]
-                ankle = person[15]
+                # ======================
+                # FRONT LEG
+                # ======================
+                front_leg = get_front_leg(person)
+
+                if front_leg == "left":
+                    hip = person[11]
+                    knee = person[13]
+                    ankle = person[15]
+                else:
+                    hip = person[12]
+                    knee = person[14]
+                    ankle = person[16]
 
                 # ======================
-                # KNEE ANGLE
+                # ANGLE
                 # ======================
                 angle = calculate_angle(hip, knee, ankle)
 
                 # ======================
                 # STAGE LOGIC
                 # ======================
-                # Standing
-                if angle > UP_ANGLE:
-                    if stage == "rising" and bottom_reached:
-                        counter += 1
-                        bottom_reached = False
-                    stage = "up"
-
-                # Going down
-                elif angle < DOWN_ANGLE:
+                if angle < DOWN_ANGLE:
                     stage = "down"
-                    bottom_reached = True
 
-                # Mid range coming up
-                else:
+                elif DOWN_ANGLE <= angle < UP_ANGLE:
                     if stage == "down":
                         stage = "rising"
 
-                # ======================
-                # ANALYSIS
-                # ======================
-                colors, warning = analyze_squat(person, angle, stage)
+                elif angle >= UP_ANGLE:
+                    if stage == "rising":
+                        counter += 1
+                    stage = "up"
 
-                # angle text
+                # ======================
+                # ANALYZE
+                # ======================
+                colors, warning = analyze_lunge(
+                    person, front_leg, angle, stage
+                )
+
                 cv2.putText(
                     annotated,
                     str(int(angle)),
@@ -222,9 +222,7 @@ while True:
                     "torso": GREEN,
                     "left_leg": GREEN,
                     "right_leg": GREEN,
-                    "left_arm": GREEN,
-                    "right_arm": GREEN,
-                    "head": GREEN
+                    "arms": GREEN
                 }
                 warning = "Tracking..."
 
@@ -236,62 +234,54 @@ while True:
                 cv2.circle(annotated, (x, y), 5, GREEN, -1)
 
             # =====================================
-            # DRAW HEAD
+            # ARMS
             # =====================================
-            for idx in [0,1,2,3,4]:
-                x, y = int(person[idx][0]), int(person[idx][1])
-                cv2.circle(annotated, (x, y), 5, colors["head"], -1)
+            draw_line(annotated, person, 5, 7, colors["arms"])
+            draw_line(annotated, person, 7, 9, colors["arms"])
+            draw_line(annotated, person, 6, 8, colors["arms"])
+            draw_line(annotated, person, 8,10, colors["arms"])
 
             # =====================================
-            # DRAW ARMS
+            # TORSO
             # =====================================
-            draw_part(annotated, person, 5, 7, colors["left_arm"])
-            draw_part(annotated, person, 7, 9, colors["left_arm"])
-
-            draw_part(annotated, person, 6, 8, colors["right_arm"])
-            draw_part(annotated, person, 8,10, colors["right_arm"])
-
-            # =====================================
-            # DRAW TORSO
-            # =====================================
-            draw_part(annotated, person, 5, 6, colors["torso"])
-            draw_part(annotated, person, 5,11, colors["torso"])
-            draw_part(annotated, person, 6,12, colors["torso"])
-            draw_part(annotated, person,11,12, colors["torso"])
+            draw_line(annotated, person, 5, 6, colors["torso"])
+            draw_line(annotated, person, 5,11, colors["torso"])
+            draw_line(annotated, person, 6,12, colors["torso"])
+            draw_line(annotated, person,11,12, colors["torso"])
 
             # =====================================
-            # DRAW LEFT LEG
+            # LEFT LEG
             # =====================================
-            draw_part(annotated, person,11,13, colors["left_leg"])
-            draw_part(annotated, person,13,15, colors["left_leg"])
+            draw_line(annotated, person,11,13, colors["left_leg"])
+            draw_line(annotated, person,13,15, colors["left_leg"])
 
             # =====================================
-            # DRAW RIGHT LEG
+            # RIGHT LEG
             # =====================================
-            draw_part(annotated, person,12,14, colors["right_leg"])
-            draw_part(annotated, person,14,16, colors["right_leg"])
+            draw_line(annotated, person,12,14, colors["right_leg"])
+            draw_line(annotated, person,14,16, colors["right_leg"])
 
             # =====================================
-            # WARNING TEXT
+            # WARNING
             # =====================================
             cv2.putText(
                 annotated,
                 warning,
-                (430, 50),
+                (420, 50),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 1,
-                RED if "Forward" in warning or "Chest" in warning else GREEN,
+                RED if warning not in ["Ready", "Good Form", "Perfect Lunge"] else GREEN,
                 2
             )
 
     # =====================================
     # UI PANEL
     # =====================================
-    cv2.rectangle(annotated, (0,0), (320,110), DARK, -1)
+    cv2.rectangle(annotated, (0,0), (340,110), DARK, -1)
 
     cv2.putText(
         annotated,
-        f"Squats: {counter}",
+        f"Lunges: {counter}",
         (10,40),
         cv2.FONT_HERSHEY_SIMPLEX,
         1,
@@ -312,7 +302,7 @@ while True:
     # =====================================
     # SHOW
     # =====================================
-    cv2.imshow("Squat Coach", annotated)
+    cv2.imshow("Lunge Coach", annotated)
 
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
