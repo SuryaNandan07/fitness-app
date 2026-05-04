@@ -2,7 +2,7 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
+import { Image } from "react-native";
 export default function WorkoutScreen() {
   const { exercise } = useLocalSearchParams();
 
@@ -10,13 +10,38 @@ export default function WorkoutScreen() {
 
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<"front" | "back">("front");
-
+  const [reps, setReps] = useState(0);
+  const [frame, setFrame] = useState("");
+  const [stage, setStage] = useState("Ready");
+  const [feedback, setFeedback] = useState("Tracking...");
   useEffect(() => {
     if (!permission) return;
 
     if (!permission.granted) {
       requestPermission();
+      return;
     }
+
+    // 🔥 START backend
+    fetch("http://192.168.0.118:8000/start");
+
+    // 🔥 POLL backend
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch("http://192.168.0.118:8000/status");
+        const data = await res.json();
+
+        console.log(data); // debug
+
+        setReps(data.reps);
+        setStage(data.stage);
+        setFeedback(data.feedback);
+      } catch (err) {
+        console.log("Error:", err);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, [permission]);
 
   if (!permission) {
@@ -39,18 +64,29 @@ export default function WorkoutScreen() {
     <View style={styles.container}>
       {/* Camera */}
       <CameraView
-        ref={cameraRef}
         style={StyleSheet.absoluteFillObject}
-        facing={facing}
+        facing="front"
       />
 
       {/* Overlay */}
       <View style={styles.overlay}>
         <Text style={styles.exercise}>{exercise || "Workout"}</Text>
 
-        <Text style={styles.counter}>Reps: 0</Text>
-        <Text style={styles.stage}>Stage: Ready</Text>
-        <Text style={styles.feedback}>Tracking...</Text>
+        <Text style={styles.counter}>Reps: {reps}</Text>
+
+        <Text style={[
+          styles.stage,
+          { color: stage === "down" ? "yellow" : "green" }
+        ]}>
+          Stage: {stage}
+        </Text>
+
+        <Text style={[
+          styles.feedback,
+          { color: feedback.includes("Nice") ? "green" : "red" }
+        ]}>
+          {feedback}
+        </Text>
       </View>
 
       {/* Bottom Controls */}
@@ -138,5 +174,12 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "600",
+  },
+  button: {
+    backgroundColor: "#22c55e",
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 14,
+    marginTop: 10,
   },
 });
