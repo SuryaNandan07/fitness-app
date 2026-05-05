@@ -316,9 +316,16 @@ def run(data, is_running):
             2
         )
 
+        # Resize final annotated frame before sending to app
+        small_frame = cv2.resize(annotated, (320, 240))
 
-        # _, buffer = cv2.imencode('.jpg', annotated, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
-        # frame_base64 = base64.b64encode(buffer).decode('utf-8')
+        _, buffer = cv2.imencode(
+            ".jpg",
+            small_frame,
+            [int(cv2.IMWRITE_JPEG_QUALITY), 45]
+        )
+
+        frame_base64 = base64.b64encode(buffer).decode("utf-8")
 
         data["frame"] = frame_base64
         data["reps"] = counter

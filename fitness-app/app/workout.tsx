@@ -23,12 +23,12 @@ export default function WorkoutScreen() {
     }
 
     // 🔥 START backend
-    fetch("http://192.168.0.118:8000/start");
+    fetch("http://192.168.0.117:8000/start");
 
     // 🔥 POLL backend
     const interval = setInterval(async () => {
       try {
-        const res = await fetch("http://192.168.0.118:8000/status");
+        const res = await fetch("http://192.168.0.117:8000/status");
         const data = await res.json();
 
         console.log(data); // debug
