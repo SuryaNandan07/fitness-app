@@ -16,6 +16,13 @@ export default function WelcomeScreen() {
       >
         <Text style={styles.buttonText}>Start Workout</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.button, { marginTop: 16, backgroundColor: "#3b82f6" }]}
+        onPress={() => router.push("/vision-test")}
+      >
+        <Text style={styles.buttonText}>Open Vision Test</Text>
+      </TouchableOpacity>
     </View>
   );
 }

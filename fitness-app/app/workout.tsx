@@ -24,7 +24,7 @@ type Point = {
 };
 
 const MIN_BODY_HEIGHT = 120;
-const PROCESS_DELAY = 1;
+const PROCESS_DELAY = 50;
 
 function scalePoint(p?: Point) {
   if (!p) return null;
@@ -33,8 +33,8 @@ function scalePoint(p?: Point) {
   const MODEL_HEIGHT = 640;
 
   const scale = Math.max(
-    SCREEN_WIDTH / MODEL_WIDTH,
-    SCREEN_HEIGHT / MODEL_HEIGHT
+      SCREEN_WIDTH / MODEL_WIDTH,
+      SCREEN_HEIGHT / MODEL_HEIGHT,
   );
 
   const scaledWidth = MODEL_WIDTH * scale;
@@ -74,11 +74,11 @@ function isValidPose(data: any) {
   }
 
   const leftBodyHeight = Math.abs(
-    data.leftAnklePosition.y - data.leftShoulderPosition.y
+      data.leftAnklePosition.y - data.leftShoulderPosition.y,
   );
 
   const rightBodyHeight = Math.abs(
-    data.rightAnklePosition.y - data.rightShoulderPosition.y
+      data.rightAnklePosition.y - data.rightShoulderPosition.y,
   );
 
   return Math.max(leftBodyHeight, rightBodyHeight) >= MIN_BODY_HEIGHT;
@@ -86,8 +86,7 @@ function isValidPose(data: any) {
 
 function calculateAngle(a: Point, b: Point, c: Point) {
   const radians =
-    Math.atan2(c.y - b.y, c.x - b.x) -
-    Math.atan2(a.y - b.y, a.x - b.x);
+      Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
 
   let angle = Math.abs((radians * 180) / Math.PI);
 
@@ -105,15 +104,15 @@ function DrawLine({ a, b, color }: { a?: Point; b?: Point; color: string }) {
   if (!p1 || !p2) return null;
 
   return (
-    <Line
-      x1={p1.x}
-      y1={p1.y}
-      x2={p2.x}
-      y2={p2.y}
-      stroke={color}
-      strokeWidth="5"
-      strokeLinecap="round"
-    />
+      <Line
+          x1={p1.x}
+          y1={p1.y}
+          x2={p2.x}
+          y2={p2.y}
+          stroke={color}
+          strokeWidth="5"
+          strokeLinecap="round"
+      />
   );
 }
 
@@ -145,17 +144,7 @@ export default function WorkoutScreen() {
 
   useEffect(() => {
     if (!hasPermission) requestPermission();
-  }, [hasPermission]);
-
-  useEffect(() => {
-    return () => {
-      setPose(null);
-      setFeedback("Tracking stopped");
-      setStage("stopped");
-      setLeftKneeAngle(0);
-      setRightKneeAngle(0);
-    };
-  }, []);
+  }, [hasPermission, requestPermission]);
 
   function processPose(data: any) {
     const now = Date.now();
@@ -166,7 +155,7 @@ export default function WorkoutScreen() {
     if (!isValidPose(data)) {
       missingPoseCount.current += 1;
 
-      if (missingPoseCount.current >= 3) {
+      if (missingPoseCount.current >= 8) {
         setPose(null);
 
         if (now - lastTextUpdateTime.current > 500) {
@@ -184,20 +173,24 @@ export default function WorkoutScreen() {
     missingPoseCount.current = 0;
 
     const leftAngle = calculateAngle(
-      data.leftHipPosition,
-      data.leftKneePosition,
-      data.leftAnklePosition
+        data.leftHipPosition,
+        data.leftKneePosition,
+        data.leftAnklePosition,
     );
 
     const rightAngle = calculateAngle(
-      data.rightHipPosition,
-      data.rightKneePosition,
-      data.rightAnklePosition
+        data.rightHipPosition,
+        data.rightKneePosition,
+        data.rightAnklePosition,
     );
 
-    setPose(data);
-    setLeftKneeAngle(Math.round(leftAngle));
-    setRightKneeAngle(Math.round(rightAngle));
+    setPose({ ...data });
+
+    const leftRounded = Math.round(leftAngle);
+    const rightRounded = Math.round(rightAngle);
+
+    setLeftKneeAngle(leftRounded);
+    setRightKneeAngle(rightRounded);
 
     if (now - lastTextUpdateTime.current > 500) {
       lastTextUpdateTime.current = now;
@@ -208,20 +201,20 @@ export default function WorkoutScreen() {
 
   if (!hasPermission) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.text}>Camera permission required</Text>
-        <TouchableOpacity style={styles.button} onPress={requestPermission}>
-          <Text style={styles.buttonText}>Allow Camera</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.center}>
+          <Text style={styles.text}>Camera permission required</Text>
+          <TouchableOpacity style={styles.button} onPress={requestPermission}>
+            <Text style={styles.buttonText}>Allow Camera</Text>
+          </TouchableOpacity>
+        </View>
     );
   }
 
   if (!device) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.text}>No camera found</Text>
-      </View>
+        <View style={styles.center}>
+          <Text style={styles.text}>No camera found</Text>
+        </View>
     );
   }
 
@@ -230,77 +223,130 @@ export default function WorkoutScreen() {
   const YELLOW = "#facc15";
 
   const leftLegColor =
-    leftKneeAngle >= 70 && leftKneeAngle <= 170 ? GREEN : RED;
+      leftKneeAngle >= 70 && leftKneeAngle <= 170 ? GREEN : RED;
 
   const rightLegColor =
-    rightKneeAngle >= 70 && rightKneeAngle <= 170 ? GREEN : RED;
+      rightKneeAngle >= 70 && rightKneeAngle <= 170 ? GREEN : RED;
 
   return (
-    <View style={styles.container}>
-      <Camera
-        key={position}
-        style={styles.camera}
-        device={device}
-        isActive={true}
-        options={{
-          mode: "stream",
-          performanceMode: "min",
-        }}
-        callback={(data: any) => processPose(data)}
-      />
+      <View style={styles.container}>
+        <Camera
+            key={position}
+            style={styles.camera}
+            device={device}
+            isActive={true}
+            options={{
+              mode: "stream",
+              performanceMode: "min",
+            }}
+            callback={(data: any) => processPose(data)}
+        />
 
-      {pose ? (
-        <Svg style={StyleSheet.absoluteFill}>
-          <DrawLine a={pose.leftShoulderPosition} b={pose.rightShoulderPosition} color={GREEN} />
-          <DrawLine a={pose.leftShoulderPosition} b={pose.leftHipPosition} color={GREEN} />
-          <DrawLine a={pose.rightShoulderPosition} b={pose.rightHipPosition} color={GREEN} />
-          <DrawLine a={pose.leftHipPosition} b={pose.rightHipPosition} color={GREEN} />
+        {pose ? (
+            <Svg style={StyleSheet.absoluteFill}>
+              <DrawLine
+                  a={pose.leftShoulderPosition}
+                  b={pose.rightShoulderPosition}
+                  color={GREEN}
+              />
+              <DrawLine
+                  a={pose.leftShoulderPosition}
+                  b={pose.leftHipPosition}
+                  color={GREEN}
+              />
+              <DrawLine
+                  a={pose.rightShoulderPosition}
+                  b={pose.rightHipPosition}
+                  color={GREEN}
+              />
+              <DrawLine
+                  a={pose.leftHipPosition}
+                  b={pose.rightHipPosition}
+                  color={GREEN}
+              />
 
-          <DrawLine a={pose.leftHipPosition} b={pose.leftKneePosition} color={leftLegColor} />
-          <DrawLine a={pose.leftKneePosition} b={pose.leftAnklePosition} color={leftLegColor} />
-          <DrawLine a={pose.leftShoulderPosition} b={pose.leftElbowPosition} color={YELLOW} />
-          <DrawLine a={pose.leftElbowPosition} b={pose.leftWristPosition} color={YELLOW} />
-          <DrawLine a={pose.rightHipPosition} b={pose.rightKneePosition} color={rightLegColor} />
-          <DrawLine a={pose.rightKneePosition} b={pose.rightAnklePosition} color={rightLegColor} />
-          <DrawLine a={pose.rightShoulderPosition} b={pose.rightElbowPosition} color={YELLOW} />
-          <DrawLine a={pose.rightElbowPosition} b={pose.rightWristPosition} color={YELLOW} />
-          <DrawPoint p={pose.leftShoulderPosition} color={GREEN} />
-          <DrawPoint p={pose.rightShoulderPosition} color={GREEN} />
-          <DrawPoint p={pose.leftHipPosition} color={GREEN} />
-          <DrawPoint p={pose.rightHipPosition} color={GREEN} />
-          <DrawPoint p={pose.leftKneePosition} color={leftLegColor} />
-          <DrawPoint p={pose.rightKneePosition} color={rightLegColor} />
-          <DrawPoint p={pose.leftAnklePosition} color={GREEN} />
-          <DrawPoint p={pose.rightAnklePosition} color={GREEN} />
-          <DrawPoint p={pose.leftElbowPosition} color={YELLOW} />
-          <DrawPoint p={pose.rightElbowPosition} color={YELLOW} />
-          <DrawPoint p={pose.leftWristPosition} color={YELLOW} />
-          <DrawPoint p={pose.rightWristPosition} color={YELLOW} />
-        </Svg>
-      ) : null}
+              <DrawLine
+                  a={pose.leftHipPosition}
+                  b={pose.leftKneePosition}
+                  color={leftLegColor}
+              />
+              <DrawLine
+                  a={pose.leftKneePosition}
+                  b={pose.leftAnklePosition}
+                  color={leftLegColor}
+              />
+              <DrawLine
+                  a={pose.leftShoulderPosition}
+                  b={pose.leftElbowPosition}
+                  color={YELLOW}
+              />
+              <DrawLine
+                  a={pose.leftElbowPosition}
+                  b={pose.leftWristPosition}
+                  color={YELLOW}
+              />
+              <DrawLine
+                  a={pose.rightHipPosition}
+                  b={pose.rightKneePosition}
+                  color={rightLegColor}
+              />
+              <DrawLine
+                  a={pose.rightKneePosition}
+                  b={pose.rightAnklePosition}
+                  color={rightLegColor}
+              />
+              <DrawLine
+                  a={pose.rightShoulderPosition}
+                  b={pose.rightElbowPosition}
+                  color={YELLOW}
+              />
+              <DrawLine
+                  a={pose.rightElbowPosition}
+                  b={pose.rightWristPosition}
+                  color={YELLOW}
+              />
+              <DrawPoint p={pose.leftShoulderPosition} color={GREEN} />
+              <DrawPoint p={pose.rightShoulderPosition} color={GREEN} />
+              <DrawPoint p={pose.leftHipPosition} color={GREEN} />
+              <DrawPoint p={pose.rightHipPosition} color={GREEN} />
+              <DrawPoint p={pose.leftKneePosition} color={leftLegColor} />
+              <DrawPoint p={pose.rightKneePosition} color={rightLegColor} />
+              <DrawPoint p={pose.leftAnklePosition} color={GREEN} />
+              <DrawPoint p={pose.rightAnklePosition} color={GREEN} />
+              <DrawPoint p={pose.leftElbowPosition} color={YELLOW} />
+              <DrawPoint p={pose.rightElbowPosition} color={YELLOW} />
+              <DrawPoint p={pose.leftWristPosition} color={YELLOW} />
+              <DrawPoint p={pose.rightWristPosition} color={YELLOW} />
+            </Svg>
+        ) : null}
 
-      <View style={styles.overlay}>
-        <Text style={styles.exercise}>{exercise || "Workout"}</Text>
-        <Text style={styles.counter}>Reps: Disabled</Text>
-        <Text style={[styles.stage, { color: stage === "tracking" ? GREEN : YELLOW }]}>
-          Stage: {stage}
-        </Text>
-        <Text style={styles.feedback}>{feedback}</Text>
-        <Text style={styles.angle}>Left Knee: {leftKneeAngle}</Text>
-        <Text style={styles.angle}>Right Knee: {rightKneeAngle}</Text>
+        <View style={styles.overlay}>
+          <Text style={styles.exercise}>{exercise || "Workout"}</Text>
+          <Text style={styles.counter}>Reps: Disabled</Text>
+          <Text
+              style={[
+                styles.stage,
+                { color: stage === "tracking" ? GREEN : YELLOW },
+              ]}
+          >
+            Stage: {stage}
+          </Text>
+          <Text style={styles.feedback}>{feedback}</Text>
+          <Text style={styles.angle}>Left Knee: {leftKneeAngle}</Text>
+          <Text style={styles.angle}>Right Knee: {rightKneeAngle}</Text>
+        </View>
+
+        <View style={styles.bottomBar}>
+          <TouchableOpacity
+              style={styles.switchBtn}
+              onPress={() =>
+                  setPosition((current) => (current === "back" ? "front" : "back"))
+              }
+          >
+            <Text style={styles.buttonText}>Flip</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-
-      <View style={styles.bottomBar}>
-        <TouchableOpacity
-          style={styles.switchBtn}
-          onPress={() =>
-            setPosition((current) => (current === "back" ? "front" : "back"))
-          }
-        >
-          <Text style={styles.buttonText}>Flip</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
   );
 }
 
