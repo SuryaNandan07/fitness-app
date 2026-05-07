@@ -18,10 +18,10 @@ export default function WelcomeScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.button, { marginTop: 16, backgroundColor: "#3b82f6" }]}
-        onPress={() => router.push("/vision-test")}
+          style={[styles.button, { marginTop: 16, backgroundColor: "#3b82f6" }]}
+          onPress={() => router.push("/yolo-onnx-test")}
       >
-        <Text style={styles.buttonText}>Open Vision Test</Text>
+        <Text style={styles.buttonText}>Open YOLO ONNX Test</Text>
       </TouchableOpacity>
     </View>
   );
