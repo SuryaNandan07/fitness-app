@@ -17,11 +17,17 @@ export default function WelcomeScreen() {
         <Text style={styles.buttonText}>Start Workout</Text>
       </TouchableOpacity>
 
+        <TouchableOpacity
+            style={[styles.button, { marginTop: 16, backgroundColor: "#3b82f6" }]}
+            onPress={() => router.push("/guided-squat")}
+        >
+            <Text style={styles.buttonText}>Open MoveNet Test</Text>
+        </TouchableOpacity>
       <TouchableOpacity
           style={[styles.button, { marginTop: 16, backgroundColor: "#3b82f6" }]}
-          onPress={() => router.push("/yolo-onnx-test")}
+          onPress={() => router.push("/workout-fixed")}
       >
-        <Text style={styles.buttonText}>Open YOLO ONNX Test</Text>
+        <Text style={styles.buttonText}>Open workout-fixed Test</Text>
       </TouchableOpacity>
     </View>
   );
