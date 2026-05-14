@@ -140,7 +140,11 @@ def run(data, is_running):
 
         return colors, warning
 
-
+    # =========================
+# WINDOW SIZE
+# =========================
+    cv2.namedWindow("Squat Coach", cv2.WINDOW_NORMAL)
+    cv2.resizeWindow("Squat Coach", 450, 900)
     # =====================================
     # MAIN LOOP
     # =====================================

@@ -1,86 +1,114 @@
-import {arePointsVisible, calculateAngle, isGoodPoint } from "./utils";
+import { arePointsVisible, calculateAngle } from "./utils";
+
+let reps = 0;
+let goodReps = 0;
+let badReps = 0;
+
+let movementStage: "up" | "down" = "up";
+let repHadMistake = false;
 
 export const squatExercise = {
-    key: "squats",
-    label: "Squats",
-    video: require("../assets/guides/squat.mp4"),
+  key: "squats",
+  label: "Squats",
+  video: require("../assets/guides/squat.mp4"),
 
-    process(data: any) {
+  process(data: any) {
+    const requiredPoints = [
+      "leftShoulderPosition",
+      "rightShoulderPosition",
+      "leftHipPosition",
+      "rightHipPosition",
+      "leftKneePosition",
+      "rightKneePosition",
+      "leftAnklePosition",
+      "rightAnklePosition",
+    ];
 
-        const requiredPoints = [
-            "leftShoulderPosition",
-            "rightShoulderPosition",
-            "leftHipPosition",
-            "rightHipPosition",
-            "leftKneePosition",
-            "rightKneePosition",
-            "leftAnklePosition",
-            "rightAnklePosition",
-        ];
+    if (!arePointsVisible(data, requiredPoints)) {
+      return {
+        wrongPart: "none",
+        feedback: "Show full body clearly",
+        stage: "waiting",
+        reps,
+        goodReps,
+        badReps,
+        debug: "Missing squat body points",
+      };
+    }
 
+    const leftKneeAngle = calculateAngle(
+      data.leftHipPosition,
+      data.leftKneePosition,
+      data.leftAnklePosition,
+    );
 
-        const leftKneeAngle = calculateAngle(
-            data.leftHipPosition,
-            data.leftKneePosition,
-            data.leftAnklePosition,
-        );
+    const rightKneeAngle = calculateAngle(
+      data.rightHipPosition,
+      data.rightKneePosition,
+      data.rightAnklePosition,
+    );
 
-        const rightKneeAngle = calculateAngle(
-            data.rightHipPosition,
-            data.rightKneePosition,
-            data.rightAnklePosition,
-        );
+    const leftHipAngle = calculateAngle(
+      data.leftShoulderPosition,
+      data.leftHipPosition,
+      data.leftKneePosition,
+    );
 
-        const leftHipAngle = calculateAngle(
-            data.leftShoulderPosition,
-            data.leftHipPosition,
-            data.leftKneePosition,
-        );
+    const rightHipAngle = calculateAngle(
+      data.rightShoulderPosition,
+      data.rightHipPosition,
+      data.rightKneePosition,
+    );
 
-        const rightHipAngle = calculateAngle(
-            data.rightShoulderPosition,
-            data.rightHipPosition,
-            data.rightKneePosition,
-        );
+    const avgKnee = (leftKneeAngle + rightKneeAngle) / 2;
+    const avgHip = (leftHipAngle + rightHipAngle) / 2;
 
-        const avgKnee = (leftKneeAngle + rightKneeAngle) / 2;
-        const avgHip = (leftHipAngle + rightHipAngle) / 2;
-        if (!arePointsVisible(data, requiredPoints)) {
-            return {
-                wrongPart: "none",
-                feedback: "Show full body clearly",
-                stage: "waiting",
-                debug: "Missing squat body points",
-            };
-        }
-        if (avgHip < 45) {
-            return {
-                wrongPart: "back",
-                feedback: "Keep your back straight",
-                stage: "wrong",
-            };
-        }
+    let wrongPart: "none" | "back" | "knees" | "depth" = "none";
+    let feedback = "Good squat";
 
-        if (avgKnee > 165) {
-            return {
-                wrongPart: "depth",
-                feedback: "Go lower",
-                stage: "wrong",
-            };
-        }
+    const isStanding = avgKnee > 150;
+    const isSquatDown = avgKnee < 115;
 
-        if (leftKneeAngle < 55 || rightKneeAngle < 55) {
-            return {
-                wrongPart: "knees",
-                feedback: "Control your knees",
-                stage: "wrong",
-            };
-        }
+    if (avgHip < 45) {
+      wrongPart = "back";
+      feedback = "Keep your back straight";
+      repHadMistake = true;
+    } else if (leftKneeAngle < 55 || rightKneeAngle < 55) {
+      wrongPart = "knees";
+      feedback = "Control your knees";
+      repHadMistake = true;
+    }
 
-        return {
-            wrongPart: "none",
-            feedback: "Good squat",
-            stage: "good",
-        };
-    },
+    if (isSquatDown && movementStage === "up") {
+      movementStage = "down";
+    }
+
+    if (isStanding && movementStage === "down") {
+      reps += 1;
+
+      if (repHadMistake) {
+        badReps += 1;
+      } else {
+        goodReps += 1;
+      }
+
+      repHadMistake = false;
+      movementStage = "up";
+    }
+
+    if (!isSquatDown && !isStanding && wrongPart === "none") {
+      wrongPart = "depth";
+      feedback = "Go lower";
+    }
+
+    return {
+      wrongPart,
+      feedback,
+      stage: movementStage,
+      reps,
+      goodReps,
+      badReps,
+      debug: `Knee: ${Math.round(avgKnee)} | Hip: ${Math.round(avgHip)} | Stage: ${movementStage}`,
+    };
+  },
 };

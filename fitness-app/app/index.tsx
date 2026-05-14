@@ -17,17 +17,23 @@ export default function WelcomeScreen() {
         <Text style={styles.buttonText}>Start Workout</Text>
       </TouchableOpacity>
 
-        <TouchableOpacity
-            style={[styles.button, { marginTop: 16, backgroundColor: "#3b82f6" }]}
-            onPress={() => router.push("/guided-squat")}
-        >
-            <Text style={styles.buttonText}>Open MoveNet Test</Text>
-        </TouchableOpacity>
       <TouchableOpacity
-          style={[styles.button, { marginTop: 16, backgroundColor: "#3b82f6" }]}
-          onPress={() => router.push("/workout-fixed")}
+        style={[styles.button, { marginTop: 16, backgroundColor: "#3b82f6" }]}
+        onPress={() => router.push("/guided-squat")}
       >
-        <Text style={styles.buttonText}>Open workout-fixed Test</Text>
+        <Text style={styles.buttonText}>Open MoveNet Test</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.button, { marginTop: 16, backgroundColor: "#3b82f6" }]}
+        onPress={() => router.push("/login")}
+      >
+        <Text style={styles.buttonText}>Login</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.button, { marginTop: 16, backgroundColor: "#3b82f6" }]}
+        onPress={() => router.push("/profile")}
+      >
+        <Text style={styles.buttonText}>Profile</Text>
       </TouchableOpacity>
     </View>
   );
