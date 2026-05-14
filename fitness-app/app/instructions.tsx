@@ -77,7 +77,7 @@ export default function InstructionsScreen() {
         style={styles.button}
         onPress={() =>
           router.push({
-            pathname: "/workout-fixed",
+            pathname: "/workout",
             params: { exercise },
           })
         }

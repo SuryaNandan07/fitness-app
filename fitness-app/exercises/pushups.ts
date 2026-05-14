@@ -1,99 +1,132 @@
 import { arePointsVisible, calculateAngle, isGoodPoint } from "./utils";
 
+let reps = 0;
+let goodReps = 0;
+let badReps = 0;
+
+let movementStage: "up" | "down" = "up";
+let repHadMistake = false;
+
 export const pushupExercise = {
-    key: "pushups",
-    label: "Pushups",
-    video: require("../assets/guides/pushup.mp4"),
+  key: "pushups",
+  label: "Pushups",
+  video: require("../assets/guides/pushup.mp4"),
 
-    process(data: any) {
-        const requiredPoints = [
-            "leftShoulderPosition",
-            "rightShoulderPosition",
-            "leftElbowPosition",
-            "rightElbowPosition",
-            "leftWristPosition",
-            "rightWristPosition",
-            "leftHipPosition",
-            "rightHipPosition",
-            "leftAnklePosition",
-            "rightAnklePosition",
-        ];
+  process(data: any) {
+    const requiredPoints = [
+      "leftShoulderPosition",
+      "rightShoulderPosition",
+      "leftElbowPosition",
+      "rightElbowPosition",
+      "leftWristPosition",
+      "rightWristPosition",
+      "leftHipPosition",
+      "rightHipPosition",
+      "leftAnklePosition",
+      "rightAnklePosition",
+    ];
 
-        if (
-            !isGoodPoint(data.leftElbowPosition) ||
-            !isGoodPoint(data.rightElbowPosition) ||
-            !isGoodPoint(data.leftWristPosition) ||
-            !isGoodPoint(data.rightWristPosition)
-        ) {
-            return {
-                wrongPart: "none",
-                feedback: "Show full upper body",
-                stage: "waiting",
-            };
-        }
+    if (
+      !isGoodPoint(data.leftElbowPosition) ||
+      !isGoodPoint(data.rightElbowPosition) ||
+      !isGoodPoint(data.leftWristPosition) ||
+      !isGoodPoint(data.rightWristPosition)
+    ) {
+      return {
+        wrongPart: "none",
+        feedback: "Show full upper body",
+        stage: "waiting",
+        reps,
+        goodReps,
+        badReps,
+      };
+    }
 
-        const leftElbowAngle = calculateAngle(
-            data.leftShoulderPosition,
-            data.leftElbowPosition,
-            data.leftWristPosition,
-        );
+    if (!arePointsVisible(data, requiredPoints)) {
+      return {
+        wrongPart: "none",
+        feedback: "Show arms and body clearly",
+        stage: "waiting",
+        reps,
+        goodReps,
+        badReps,
+        debug: "Missing pushup body points",
+      };
+    }
 
-        const rightElbowAngle = calculateAngle(
-            data.rightShoulderPosition,
-            data.rightElbowPosition,
-            data.rightWristPosition,
-        );
+    const leftElbowAngle = calculateAngle(
+      data.leftShoulderPosition,
+      data.leftElbowPosition,
+      data.leftWristPosition,
+    );
 
-        const leftBodyAngle = calculateAngle(
-            data.leftShoulderPosition,
-            data.leftHipPosition,
-            data.leftAnklePosition,
-        );
+    const rightElbowAngle = calculateAngle(
+      data.rightShoulderPosition,
+      data.rightElbowPosition,
+      data.rightWristPosition,
+    );
 
-        const rightBodyAngle = calculateAngle(
-            data.rightShoulderPosition,
-            data.rightHipPosition,
-            data.rightAnklePosition,
-        );
+    const leftBodyAngle = calculateAngle(
+      data.leftShoulderPosition,
+      data.leftHipPosition,
+      data.leftAnklePosition,
+    );
 
-        const avgElbow = (leftElbowAngle + rightElbowAngle) / 2;
-        const avgBody = (leftBodyAngle + rightBodyAngle) / 2;
-        if (!arePointsVisible(data, requiredPoints)) {
-            return {
-                wrongPart: "none",
-                feedback: "Show arms and body clearly",
-                stage: "waiting",
-                debug: "Missing pushup body points",
-            };
-        }
-        if (avgBody < 155) {
-            return {
-                wrongPart: "back",
-                feedback: "Keep your body straight",
-                stage: "wrong",
-            };
-        }
+    const rightBodyAngle = calculateAngle(
+      data.rightShoulderPosition,
+      data.rightHipPosition,
+      data.rightAnklePosition,
+    );
 
-        if (avgElbow > 155) {
-            return {
-                wrongPart: "arms",
-                feedback: "Go lower",
-                stage: "wrong",
-            };
-        }
+    const avgElbow = (leftElbowAngle + rightElbowAngle) / 2;
+    const avgBody = (leftBodyAngle + rightBodyAngle) / 2;
 
-        if (avgElbow < 45) {
-            return {
-                wrongPart: "arms",
-                feedback: "Do not collapse too low",
-                stage: "wrong",
-            };
-        }
+    let wrongPart: "none" | "back" | "arms" = "none";
+    let feedback = "Good pushup";
 
-        return {
-            wrongPart: "none",
-            feedback: "Good pushup",
-            stage: "good",
-        };
-    },
+    const isPushupUp = avgElbow > 150;
+    const isPushupDown = avgElbow < 90;
+
+    if (avgBody < 155) {
+      wrongPart = "back";
+      feedback = "Keep your body straight";
+      repHadMistake = true;
+    } else if (avgElbow < 45) {
+      wrongPart = "arms";
+      feedback = "Do not collapse too low";
+      repHadMistake = true;
+    }
+
+    if (isPushupDown && movementStage === "up") {
+      movementStage = "down";
+    }
+
+    if (isPushupUp && movementStage === "down") {
+      reps += 1;
+
+      if (repHadMistake) {
+        badReps += 1;
+      } else {
+        goodReps += 1;
+      }
+
+      repHadMistake = false;
+      movementStage = "up";
+    }
+
+    if (!isPushupDown && !isPushupUp && wrongPart === "none") {
+      wrongPart = "arms";
+      feedback = "Go lower";
+    }
+
+    return {
+      wrongPart,
+      feedback,
+      stage: movementStage,
+      reps,
+      goodReps,
+      badReps,
+      debug: `Elbow: ${Math.round(avgElbow)} | Body: ${Math.round(avgBody)} | Stage: ${movementStage}`,
+    };
+  },
 };
