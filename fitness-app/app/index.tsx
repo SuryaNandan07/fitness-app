@@ -35,6 +35,12 @@ export default function WelcomeScreen() {
       >
         <Text style={styles.buttonText}>Profile</Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.button, { marginTop: 16, backgroundColor: "#f97316" }]}
+        onPress={() => router.push("/recommendations")}
+      >
+        <Text style={styles.buttonText}>Get Recommendations</Text>
+      </TouchableOpacity>
     </View>
   );
 }
