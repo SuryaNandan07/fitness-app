@@ -1,4 +1,4 @@
-const BASE_URL = "http://192.168.29.101:5000/api";
+const BASE_URL = "http://10.89.206.60:5000/api";
 
 export async function apiRequest(
   endpoint: string,
@@ -15,7 +15,14 @@ export async function apiRequest(
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  const data = await response.json();
+  const text = await response.text();
+
+  let data: any = {};
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { message: text };
+  }
 
   if (!response.ok) {
     throw new Error(data.message || "Something went wrong");
