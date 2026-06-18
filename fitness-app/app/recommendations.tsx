@@ -7,6 +7,7 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
+    useColorScheme,
     View,
 } from "react-native";
 import { apiRequest } from "../utils/api";
@@ -29,10 +30,13 @@ export default function RecommendationsScreen() {
 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [errorMessage, setErrorMessage] = useState("");
+  const palette = useColorScheme() === "dark" ? darkPalette : lightPalette;
 
   async function handleGetRecommendations() {
     try {
       setLoading(true);
+      setErrorMessage("");
 
       const token = await getToken();
 
@@ -73,6 +77,7 @@ export default function RecommendationsScreen() {
 
       setResult(recommendationData);
     } catch (error: any) {
+      setErrorMessage(error.message);
       Alert.alert("Recommendation failed", error.message);
     } finally {
       setLoading(false);
@@ -94,298 +99,357 @@ export default function RecommendationsScreen() {
 
     return (
       <TouchableOpacity
-        style={[styles.option, active && styles.activeOption]}
+        activeOpacity={0.86}
+        style={[
+          styles.option,
+          { backgroundColor: active ? palette.accent : palette.subtle },
+        ]}
         onPress={() => onPress(value)}
       >
-        <Text style={[styles.optionText, active && styles.activeOptionText]}>
+        <Text style={[styles.optionText, { color: active ? "#ffffff" : palette.text }]}>
           {label}
         </Text>
       </TouchableOpacity>
     );
   }
 
+  const recommendations = result?.recommendations;
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Recommendations</Text>
-      <Text style={styles.subtitle}>Create your fitness profile</Text>
+    <ScrollView
+      style={[styles.container, { backgroundColor: palette.background }]}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={[styles.hero, { backgroundColor: palette.hero }]}>
+        <View style={styles.heroGlow} />
+        <Text style={styles.kicker}>AI Fitness Coach</Text>
+        <Text style={styles.title}>Build your adaptive plan</Text>
+        <Text style={[styles.subtitle, { color: palette.heroMuted }]}>
+          Tell the coach your goal, schedule, and preferences. Your workout and nutrition plan stays personalized.
+        </Text>
+      </View>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>Age</Text>
-        <TextInput
-          style={styles.input}
-          value={age}
-          onChangeText={setAge}
-          keyboardType="numeric"
-        />
+      <View style={[styles.card, { backgroundColor: palette.card, borderColor: palette.border, shadowColor: palette.shadow }]}>
+        <Text style={[styles.cardTitle, { color: palette.text }]}>Goal Profile</Text>
 
-        <Text style={styles.label}>Gender</Text>
-        <TextInput
-          style={styles.input}
-          value={gender}
-          onChangeText={setGender}
-        />
+        <View style={styles.inputGrid}>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: palette.muted }]}>Age</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: palette.input, color: palette.text, borderColor: palette.border }]}
+              value={age}
+              onChangeText={setAge}
+              keyboardType="numeric"
+              placeholderTextColor={palette.muted}
+            />
+          </View>
 
-        <Text style={styles.label}>Height cm</Text>
-        <TextInput
-          style={styles.input}
-          value={height}
-          onChangeText={setHeight}
-          keyboardType="numeric"
-        />
-
-        <Text style={styles.label}>Weight kg</Text>
-        <TextInput
-          style={styles.input}
-          value={weight}
-          onChangeText={setWeight}
-          keyboardType="numeric"
-        />
-
-        <Text style={styles.label}>Body Type</Text>
-        <View style={styles.optionWrap}>
-          <OptionButton
-            label="Skinny"
-            value="skinny"
-            selected={bodyType}
-            onPress={setBodyType}
-          />
-          <OptionButton
-            label="Belly Fat"
-            value="belly_fat"
-            selected={bodyType}
-            onPress={setBodyType}
-          />
-          <OptionButton
-            label="Overweight"
-            value="overweight"
-            selected={bodyType}
-            onPress={setBodyType}
-          />
-          <OptionButton
-            label="Normal"
-            value="normal"
-            selected={bodyType}
-            onPress={setBodyType}
-          />
-          <OptionButton
-            label="Athletic"
-            value="athletic"
-            selected={bodyType}
-            onPress={setBodyType}
-          />
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: palette.muted }]}>Gender</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: palette.input, color: palette.text, borderColor: palette.border }]}
+              value={gender}
+              onChangeText={setGender}
+              placeholderTextColor={palette.muted}
+            />
+          </View>
         </View>
 
-        <Text style={styles.label}>Goal</Text>
-        <View style={styles.optionWrap}>
-          <OptionButton
-            label="Weight Loss"
-            value="weight_loss"
-            selected={goal}
-            onPress={setGoal}
-          />
-          <OptionButton
-            label="Muscle Gain"
-            value="muscle_gain"
-            selected={goal}
-            onPress={setGoal}
-          />
-          <OptionButton
-            label="Strength"
-            value="strength"
-            selected={goal}
-            onPress={setGoal}
-          />
-          <OptionButton
-            label="Endurance"
-            value="endurance"
-            selected={goal}
-            onPress={setGoal}
-          />
-          <OptionButton
-            label="Fitness"
-            value="general_fitness"
-            selected={goal}
-            onPress={setGoal}
-          />
-          <OptionButton
-            label="Sport"
-            value="sport_performance"
-            selected={goal}
-            onPress={setGoal}
-          />
+        <View style={styles.inputGrid}>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: palette.muted }]}>Height cm</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: palette.input, color: palette.text, borderColor: palette.border }]}
+              value={height}
+              onChangeText={setHeight}
+              keyboardType="numeric"
+              placeholderTextColor={palette.muted}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: palette.muted }]}>Weight kg</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: palette.input, color: palette.text, borderColor: palette.border }]}
+              value={weight}
+              onChangeText={setWeight}
+              keyboardType="numeric"
+              placeholderTextColor={palette.muted}
+            />
+          </View>
         </View>
 
-        <Text style={styles.label}>Food Preference</Text>
+        <Text style={[styles.label, { color: palette.muted }]}>Body Type</Text>
         <View style={styles.optionWrap}>
-          <OptionButton
-            label="Veg"
-            value="veg"
-            selected={foodPreference}
-            onPress={setFoodPreference}
-          />
-          <OptionButton
-            label="Non Veg"
-            value="non_veg"
-            selected={foodPreference}
-            onPress={setFoodPreference}
-          />
-          <OptionButton
-            label="Eggetarian"
-            value="eggetarian"
-            selected={foodPreference}
-            onPress={setFoodPreference}
-          />
-          <OptionButton
-            label="Vegan"
-            value="vegan"
-            selected={foodPreference}
-            onPress={setFoodPreference}
-          />
+          <OptionButton label="Skinny" value="skinny" selected={bodyType} onPress={setBodyType} />
+          <OptionButton label="Belly Fat" value="belly_fat" selected={bodyType} onPress={setBodyType} />
+          <OptionButton label="Overweight" value="overweight" selected={bodyType} onPress={setBodyType} />
+          <OptionButton label="Normal" value="normal" selected={bodyType} onPress={setBodyType} />
+          <OptionButton label="Athletic" value="athletic" selected={bodyType} onPress={setBodyType} />
         </View>
 
-        <Text style={styles.label}>Activity Level</Text>
+        <Text style={[styles.label, { color: palette.muted }]}>Goal</Text>
         <View style={styles.optionWrap}>
-          <OptionButton
-            label="Low"
-            value="low"
-            selected={activityLevel}
-            onPress={setActivityLevel}
-          />
-          <OptionButton
-            label="Medium"
-            value="medium"
-            selected={activityLevel}
-            onPress={setActivityLevel}
-          />
-          <OptionButton
-            label="High"
-            value="high"
-            selected={activityLevel}
-            onPress={setActivityLevel}
-          />
+          <OptionButton label="Weight Loss" value="weight_loss" selected={goal} onPress={setGoal} />
+          <OptionButton label="Muscle Gain" value="muscle_gain" selected={goal} onPress={setGoal} />
+          <OptionButton label="Strength" value="strength" selected={goal} onPress={setGoal} />
+          <OptionButton label="Endurance" value="endurance" selected={goal} onPress={setGoal} />
+          <OptionButton label="Fitness" value="general_fitness" selected={goal} onPress={setGoal} />
+          <OptionButton label="Sport" value="sport_performance" selected={goal} onPress={setGoal} />
         </View>
 
-        <Text style={styles.label}>Sport</Text>
-        <TextInput style={styles.input} value={sport} onChangeText={setSport} />
+        <Text style={[styles.label, { color: palette.muted }]}>Food Preference</Text>
+        <View style={styles.optionWrap}>
+          <OptionButton label="Veg" value="veg" selected={foodPreference} onPress={setFoodPreference} />
+          <OptionButton label="Non Veg" value="non_veg" selected={foodPreference} onPress={setFoodPreference} />
+          <OptionButton label="Eggetarian" value="eggetarian" selected={foodPreference} onPress={setFoodPreference} />
+          <OptionButton label="Vegan" value="vegan" selected={foodPreference} onPress={setFoodPreference} />
+        </View>
 
-        <Text style={styles.label}>Available Time minutes</Text>
+        <Text style={[styles.label, { color: palette.muted }]}>Activity Level</Text>
+        <View style={styles.optionWrap}>
+          <OptionButton label="Low" value="low" selected={activityLevel} onPress={setActivityLevel} />
+          <OptionButton label="Medium" value="medium" selected={activityLevel} onPress={setActivityLevel} />
+          <OptionButton label="High" value="high" selected={activityLevel} onPress={setActivityLevel} />
+        </View>
+
+        <Text style={[styles.label, { color: palette.muted }]}>Sport</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: palette.input, color: palette.text, borderColor: palette.border }]}
+          value={sport}
+          onChangeText={setSport}
+          placeholderTextColor={palette.muted}
+        />
+
+        <Text style={[styles.label, { color: palette.muted }]}>Available Time minutes</Text>
+        <TextInput
+          style={[styles.input, { backgroundColor: palette.input, color: palette.text, borderColor: palette.border }]}
           value={availableTime}
           onChangeText={setAvailableTime}
           keyboardType="numeric"
+          placeholderTextColor={palette.muted}
         />
 
-        <Text style={styles.label}>Equipment</Text>
+        <Text style={[styles.label, { color: palette.muted }]}>Equipment</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: palette.input, color: palette.text, borderColor: palette.border }]}
           value={equipment}
           onChangeText={setEquipment}
+          placeholderTextColor={palette.muted}
         />
 
-        <Text style={styles.label}>Injury</Text>
+        <Text style={[styles.label, { color: palette.muted }]}>Injury</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: palette.input, color: palette.text, borderColor: palette.border }]}
           value={injury}
           onChangeText={setInjury}
+          placeholderTextColor={palette.muted}
         />
 
         <TouchableOpacity
-          style={styles.button}
+          activeOpacity={0.88}
+          style={[styles.button, loading && styles.disabledButton]}
           onPress={handleGetRecommendations}
           disabled={loading}
         >
-          <Text style={styles.buttonText}>
-            {loading ? "Generating..." : "Get My Plan"}
-          </Text>
+          <Text style={styles.buttonText}>{loading ? "Generating..." : "Get My Plan"}</Text>
         </TouchableOpacity>
       </View>
 
-      {result && (
-        <View style={styles.resultCard}>
-          <Text style={styles.sectionTitle}>Why this plan?</Text>
-          <Text style={styles.reason}>{result.recommendations.reason}</Text>
+      {loading ? (
+        <View style={[styles.stateCard, { backgroundColor: palette.card, borderColor: palette.border }]}>
+          <Text style={[styles.stateTitle, { color: palette.text }]}>Building your plan...</Text>
+          <Text style={[styles.stateText, { color: palette.muted }]}>The AI coach is matching training, diet, and safety notes to your profile.</Text>
+        </View>
+      ) : null}
 
-          <Text style={styles.sectionTitle}>Exercises</Text>
-          {result.recommendations.exercises.map(
-            (item: string, index: number) => (
-              <Text key={index} style={styles.item}>
+      {!loading && errorMessage ? (
+        <View style={[styles.stateCard, { backgroundColor: palette.card, borderColor: palette.border }]}>
+          <Text style={[styles.stateTitle, { color: palette.text }]}>Could not generate recommendations</Text>
+          <Text style={[styles.stateText, { color: palette.muted }]}>{errorMessage}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleGetRecommendations}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      {!loading && !errorMessage && !result ? (
+        <View style={[styles.stateCard, { backgroundColor: palette.card, borderColor: palette.border }]}>
+          <Text style={[styles.stateTitle, { color: palette.text }]}>No plan yet</Text>
+          <Text style={[styles.stateText, { color: palette.muted }]}>Complete your profile and tap Get My Plan to generate your AI fitness recommendation.</Text>
+        </View>
+      ) : null}
+
+      {recommendations ? (
+        <View style={styles.resultsWrap}>
+          <ResultSection title="Goal" palette={palette}>
+            <Text style={[styles.reason, { color: palette.muted }]}>{recommendations.reason}</Text>
+          </ResultSection>
+
+          <ResultSection title="Workout Plan" palette={palette}>
+            {recommendations.exercises.map((item: string, index: number) => (
+              <Text key={index} style={[styles.item, { color: palette.text }]}>
                 • {item}
               </Text>
-            ),
-          )}
+            ))}
+            {recommendations.weeklyPlan.map((day: any, index: number) => (
+              <View key={index} style={[styles.dayBox, { backgroundColor: palette.subtle }]}>
+                <Text style={[styles.dayTitle, { color: palette.text }]}>{day.day}</Text>
+                <Text style={[styles.item, { color: palette.muted }]}>Workout: {day.workout.join(", ")}</Text>
+                <Text style={[styles.item, { color: palette.muted }]}>Sets: {day.sets}</Text>
+                <Text style={[styles.item, { color: palette.muted }]}>Note: {day.note}</Text>
+              </View>
+            ))}
+          </ResultSection>
 
-          <Text style={styles.sectionTitle}>Foods</Text>
-          {result.recommendations.foods.map((item: string, index: number) => (
-            <Text key={index} style={styles.item}>
-              • {item}
+          <ResultSection title="Diet / Nutrition Tips" palette={palette}>
+            {recommendations.foods.map((item: string, index: number) => (
+              <Text key={index} style={[styles.item, { color: palette.text }]}>
+                • {item}
+              </Text>
+            ))}
+          </ResultSection>
+
+          <ResultSection title="Notes / Safety" palette={palette}>
+            <Text style={[styles.reason, { color: palette.muted }]}>
+              Adjust intensity if pain appears, respect your injury field, and keep form quality ahead of volume.
             </Text>
-          ))}
-
-          <Text style={styles.sectionTitle}>Weekly Plan</Text>
-          {result.recommendations.weeklyPlan.map((day: any, index: number) => (
-            <View key={index} style={styles.dayBox}>
-              <Text style={styles.dayTitle}>{day.day}</Text>
-              <Text style={styles.item}>Workout: {day.workout.join(", ")}</Text>
-              <Text style={styles.item}>Sets: {day.sets}</Text>
-              <Text style={styles.item}>Note: {day.note}</Text>
-            </View>
-          ))}
+          </ResultSection>
         </View>
-      )}
+      ) : null}
 
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.push("/")}
-      >
-        <Text style={styles.backText}>Back Home</Text>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.push("/")}>
+        <Text style={[styles.backText, { color: palette.accent }]}>Back Home</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
+function ResultSection({
+  title,
+  children,
+  palette,
+}: {
+  title: string;
+  children: React.ReactNode;
+  palette: typeof lightPalette;
+}) {
+  return (
+    <View style={[styles.resultCard, { backgroundColor: palette.card, borderColor: palette.border, shadowColor: palette.shadow }]}>
+      <Text style={[styles.sectionTitle, { color: palette.text }]}>{title}</Text>
+      {children}
+    </View>
+  );
+}
+
+const lightPalette = {
+  background: "#f8f8fa",
+  text: "#141116",
+  muted: "#74707a",
+  card: "#ffffff",
+  border: "#ece8ee",
+  accent: "#ff3d63",
+  hero: "#21151a",
+  heroMuted: "#f2c8d3",
+  input: "#f6f3f6",
+  subtle: "#f6f3f6",
+  shadow: "#d7cbd3",
+};
+
+const darkPalette = {
+  background: "#0e0d10",
+  text: "#f7f2f5",
+  muted: "#a79fa8",
+  card: "#19161b",
+  border: "#28232b",
+  accent: "#ff3d63",
+  hero: "#2a121a",
+  heroMuted: "#f0b8c8",
+  input: "#211d24",
+  subtle: "#211d24",
+  shadow: "#000000",
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0f172a",
   },
   content: {
-    padding: 24,
+    padding: 20,
     paddingBottom: 40,
+    gap: 18,
+  },
+  hero: {
+    borderRadius: 30,
+    minHeight: 240,
+    overflow: "hidden",
+    padding: 24,
+  },
+  heroGlow: {
+    backgroundColor: "rgba(255, 61, 99, 0.46)",
+    borderRadius: 120,
+    height: 220,
+    position: "absolute",
+    right: -70,
+    top: -70,
+    width: 220,
+  },
+  kicker: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "900",
+    letterSpacing: 0,
+    textTransform: "uppercase",
   },
   title: {
-    fontSize: 34,
+    color: "#ffffff",
+    fontSize: 36,
     fontWeight: "900",
-    color: "#22c55e",
-    textAlign: "center",
-    marginTop: 30,
+    lineHeight: 40,
+    marginTop: 44,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#cbd5e1",
-    textAlign: "center",
-    marginTop: 8,
-    marginBottom: 24,
-  },
-  card: {
-    backgroundColor: "white",
-    borderRadius: 28,
-    padding: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#334155",
-    marginBottom: 8,
+    fontSize: 15,
+    lineHeight: 22,
     marginTop: 12,
   },
+  card: {
+    borderRadius: 28,
+    borderWidth: 1,
+    elevation: 8,
+    padding: 18,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.14,
+    shadowRadius: 24,
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: "900",
+    lineHeight: 26,
+    marginBottom: 6,
+  },
+  inputGrid: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  inputGroup: {
+    flex: 1,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: "900",
+    lineHeight: 16,
+    marginBottom: 8,
+    marginTop: 14,
+    textTransform: "uppercase",
+  },
   input: {
-    backgroundColor: "#f1f5f9",
     borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
+    borderWidth: 1,
     fontSize: 16,
-    color: "#111827",
+    minHeight: 52,
+    paddingHorizontal: 15,
   },
   optionWrap: {
     flexDirection: "row",
@@ -393,77 +457,101 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   option: {
-    backgroundColor: "#e2e8f0",
     borderRadius: 999,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
     marginBottom: 8,
-  },
-  activeOption: {
-    backgroundColor: "#22c55e",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
   optionText: {
-    color: "#334155",
-    fontWeight: "800",
-  },
-  activeOptionText: {
-    color: "white",
-  },
-  button: {
-    backgroundColor: "#22c55e",
-    paddingVertical: 16,
-    borderRadius: 18,
-    alignItems: "center",
-    marginTop: 22,
-  },
-  buttonText: {
-    color: "white",
-    fontSize: 17,
+    fontSize: 13,
     fontWeight: "900",
   },
+  button: {
+    alignItems: "center",
+    backgroundColor: "#ff3d63",
+    borderRadius: 999,
+    marginTop: 22,
+    paddingVertical: 16,
+  },
+  disabledButton: {
+    opacity: 0.72,
+  },
+  buttonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  stateCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 18,
+  },
+  stateTitle: {
+    fontSize: 19,
+    fontWeight: "900",
+    lineHeight: 23,
+  },
+  stateText: {
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: 8,
+  },
+  retryButton: {
+    alignSelf: "flex-start",
+    backgroundColor: "#ff3d63",
+    borderRadius: 999,
+    marginTop: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+  },
+  retryText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  resultsWrap: {
+    gap: 14,
+  },
   resultCard: {
-    backgroundColor: "white",
-    borderRadius: 28,
-    padding: 20,
-    marginTop: 20,
+    borderRadius: 24,
+    borderWidth: 1,
+    elevation: 5,
+    padding: 18,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
   },
   sectionTitle: {
     fontSize: 21,
     fontWeight: "900",
-    color: "#111827",
-    marginTop: 16,
-    marginBottom: 8,
+    lineHeight: 25,
+    marginBottom: 10,
   },
   reason: {
     fontSize: 15,
-    color: "#475569",
     lineHeight: 22,
   },
   item: {
     fontSize: 15,
-    color: "#334155",
-    marginBottom: 6,
     lineHeight: 22,
+    marginBottom: 6,
   },
   dayBox: {
-    backgroundColor: "#f1f5f9",
     borderRadius: 18,
+    marginTop: 8,
     padding: 14,
-    marginBottom: 10,
   },
   dayTitle: {
     fontSize: 16,
     fontWeight: "900",
-    color: "#111827",
+    lineHeight: 20,
     marginBottom: 6,
   },
   backButton: {
-    paddingVertical: 16,
     alignItems: "center",
-    marginTop: 10,
+    paddingVertical: 16,
   },
   backText: {
-    color: "#22c55e",
     fontSize: 16,
     fontWeight: "900",
   },
